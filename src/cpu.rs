@@ -16,14 +16,26 @@ use crate::memory::Memory;
 
 pub struct CPU {
     memory: Memory,
-    register: [u16; 4]
+    register: [u16; 4],
+    pc: u16
 }
 
 impl CPU {
     pub fn new(memory: Memory) -> CPU {
         CPU {
             memory,
-            register: [0; 4]
+            register: [0; 4],
+            pc: 0
+        }
+    }
+
+    /// Programs take the first 512 memory locations
+    pub fn run(&mut self) {
+        while self.pc < 512 {
+            let instruction = self.memory.read(self.pc);
+            self.parse_instruction(&instruction);
+
+            self.pc += 1;
         }
     }
 
@@ -47,7 +59,7 @@ impl CPU {
             },
             0b0011_0000_0000_0000 => {
                 let constant = instruction & 0b0000_0000_1111_1111;
-                let register = instruction & 0b0000_1111_0000_0000;
+                let register = (instruction & 0b0000_1111_0000_0000) >> 8;
                 self.register[register as usize] = self.register[register as usize] - constant;
             },
             0b00100_0000_0000_0000 => {
@@ -55,7 +67,9 @@ impl CPU {
                 let register = instruction & 0b0000_1111_0000_0000;
                 self.register[register as usize] = self.register[register as usize] & constant;
             }
-            _ => {}
+            _ => {
+                println!("Unknown opcode!")
+            }
         }
     }
 }
