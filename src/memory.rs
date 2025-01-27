@@ -1,13 +1,13 @@
-pub const size: usize = 1024;
+pub const SIZE: usize = 1024;
 
 pub struct Memory {
-    pub memory: [u16; size]
+    pub memory: [u16; SIZE]
 }
 
 impl Memory {
     pub fn new() -> Self {
         Memory {
-            memory: [0; size]
+            memory: [0; SIZE]
         }
     }
 

@@ -5,6 +5,8 @@
 /// 0010 - add: 0010 + the register 00 + xx + a number 0000 0000
 /// 0011 - sub: 0011 + the register 00 + xx + a number 0000 0000
 /// 0100 - and: 0100 + the register 00 + xx + a number 0000 0000
+/// 0101 - move: 0101 + the register 00 + xx + a number 0000 0000
+/// 0111 - halt: 0111
 /// 
 /// registers are represented with 2 bits
 /// 00 - R1
@@ -29,17 +31,32 @@ impl CPU {
         }
     }
 
+    pub fn read(&self, index: usize) -> u16 {
+        self.register[index]
+    }
+
+    pub fn read_memory(&self, address: u16) -> u16{
+        self.memory.read(address)
+    }
+
+    pub fn write_memory(&mut self, address: u16, data: u16) {
+        self.memory.write(address, data);
+    }
+
     /// Programs take the first 512 memory locations
-    pub fn run(&mut self) {
+    pub fn execute(&mut self) {
         while self.pc < 512 {
             let instruction = self.memory.read(self.pc);
-            self.parse_instruction(&instruction);
+            let is_halt = self.parse_instruction(&instruction);
+            if is_halt {
+                break;
+            }
 
             self.pc += 1;
         }
     }
 
-    pub fn parse_instruction(&mut self, instruction: &u16) {
+    pub fn parse_instruction(&mut self, instruction: &u16) -> bool {
         let opcode = instruction & 0b1111_0000_0000_0000;
         match opcode {
             0b0000 => {
@@ -54,7 +71,7 @@ impl CPU {
             },
             0b0010_0000_0000_0000 => {
                 let constant = instruction & 0b0000_0000_1111_1111;
-                let register = instruction & 0b0000_1111_0000_0000;
+                let register = (instruction & 0b0000_1111_0000_0000) >> 8;
                 self.register[register as usize] = self.register[register as usize] + constant;
             },
             0b0011_0000_0000_0000 => {
@@ -64,13 +81,22 @@ impl CPU {
             },
             0b00100_0000_0000_0000 => {
                 let constant = instruction & 0b0000_0000_1111_1111;
-                let register = instruction & 0b0000_1111_0000_0000;
+                let register = (instruction & 0b0000_1111_0000_0000) >> 8;
                 self.register[register as usize] = self.register[register as usize] & constant;
+            },
+            0b00101_0000_0000_0000 => {
+                let constant = instruction & 0b0000_0000_1111_1111;
+                let register = (instruction & 0b0000_1111_0000_0000) >> 8;
+                self.register[register as usize] = constant;
+            },
+            0b00111_0000_0000_0000 => {
+                return true;
             }
             _ => {
                 println!("Unknown opcode!")
             }
         }
+        false
     }
 }
 
